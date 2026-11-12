@@ -292,6 +292,10 @@ class AlertTests(unittest.TestCase):
         self.assertEqual(alerts, [])
         c.tick(t + timedelta(minutes=6))
         self.assertEqual(alerts[0][0], "EverLights bridge restarted")
+        b.count = 2
+        c.tick(t + timedelta(minutes=12))
+        self.assertEqual(alerts[1][0], "EverLights bridge data reset")
+        self.assertEqual(len(alerts), 2)
 
 
 class HistoryTests(unittest.TestCase):

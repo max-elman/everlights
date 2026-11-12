@@ -539,11 +539,22 @@ class Controller:
         if self.reboots is not None:
             for k, n in counts.items():
                 old = self.reboots.get(k)
-                if n is not None and old is not None and n > old:
-                    what = "bridge" if k == "bridge" else "roofline controller"
+                if n is None or old is None or n == old:
+                    continue
+                what = "bridge" if k == "bridge" else "roofline controller"
+                if n > old:
                     self.log("warn", f"The {what} restarted (reboot count {n})")
                     self.notify(f"EverLights {what} restarted",
                                 f"Reboot count went from {old} to {n}.", 3, ["arrows_counterclockwise"])
+                else:
+                    # The count only goes down when the device's stored data starts over. For the
+                    # bridge that's its SD card (.bootcount sits next to zones.json and the scenes),
+                    # as on 2026-11-11 when it went from 40 to 2 and the pairing and scenes vanished.
+                    self.log("warn", f"The {what}'s reboot count dropped from {old} to {n}; its stored data was probably reset")
+                    self.notify(f"EverLights {what} data reset",
+                                f"Reboot count dropped from {old} to {n}, so it restarted and its stored data "
+                                "(pairing, saved scenes) was probably wiped. Check the EverLights app.",
+                                4, ["warning"])
         self.reboots = counts
 
     def record_change(self, p, now, result):
