@@ -513,7 +513,19 @@ function renderNow() {
   const st = S.state;
   const pill = $("#bridgePill");
   if (!st) return;
+  const clearNow = () => {
+    pill.style.color = ""; paintStrip($("#nowStrip"), null); $("#offBtn").disabled = true;
+    document.querySelectorAll(".card.playing").forEach(c => c.classList.remove("playing"));
+  };
+  if (st.noController) {
+    clearNow();
+    pill.textContent = "No controller paired"; pill.className = "pill err";
+    $("#nowName").textContent = "Unknown";
+    $("#nowMeta").innerHTML = `<span>The bridge is online, but it has no roofline controller paired, so the lights can't be controlled. Re-pair the controller in the EverLights app.</span>`;
+    return;
+  }
   if (st.bridgeError) {
+    clearNow();
     pill.textContent = "Bridge unreachable"; pill.className = "pill err";
     $("#nowName").textContent = "Unknown"; $("#nowMeta").innerHTML = `<span>${esc(st.bridgeError)}</span>`;
     return;

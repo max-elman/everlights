@@ -268,6 +268,8 @@ class Handler(BaseHTTPRequestHandler):
             cur = ctl.current()
             out["current"] = {"pattern": cur.get("pattern", []), "effects": cur.get("effects", []),
                               "match": match_sequence(ctl, cur)}
+        except scheduler.NoController as e:
+            out["noController"] = str(e)
         except Exception as e:
             out["bridgeError"] = str(e)
         self.send_json(out)

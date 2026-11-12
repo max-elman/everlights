@@ -28,6 +28,13 @@ HEALTH_EVERY = timedelta(minutes=5)
 HISTORY_DAYS = 30
 
 
+class NoController(Exception):
+    """The bridge answers but has no roofline controller (zone) paired."""
+
+    def __str__(self):
+        return "The bridge is online but has no controller paired (its zone list is empty)"
+
+
 @dataclass
 class Config:
     lat: float
@@ -442,6 +449,8 @@ class Controller:
     def send(self, target):
         """Send target (None = off) to every zone, then read it back."""
         serials = self.zone_serials()
+        if not serials:
+            raise NoController()
         for serial in serials:
             if target is None:
                 self.call(self.host, "DELETE", f"zones/{serial}/sequence")
@@ -473,22 +482,34 @@ class Controller:
         try:
             cur = self.current()
         except Exception as e:
+            no_ctl = isinstance(e, NoController)
             if self.unreachable_since is None:
                 self.unreachable_since = now
-                self.log("warn", f"Bridge not answering: {e}")
+                self.log("warn", str(e) if no_ctl else f"Bridge not answering: {e}")
             elif not self.unreachable_alerted and now - self.unreachable_since >= UNREACHABLE_ALERT:
                 self.unreachable_alerted = True
-                self.notify("EverLights bridge unreachable",
-                            f"No answer from the bridge at {self.host} since "
-                            f"{self.unreachable_since.strftime('%-I:%M %p')}. Scheduled changes can't happen.",
-                            4, ["warning"])
+                since = self.unreachable_since.strftime('%-I:%M %p')
+                if no_ctl:
+                    self.notify("EverLights controller not paired",
+                                f"The bridge at {self.host} is online but has had no controller paired since "
+                                f"{since}. Re-pair it in the EverLights app. Scheduled changes can't happen.",
+                                4, ["warning"])
+                else:
+                    self.notify("EverLights bridge unreachable",
+                                f"No answer from the bridge at {self.host} since "
+                                f"{since}. Scheduled changes can't happen.",
+                                4, ["warning"])
             return
         if self.unreachable_since is not None:
             down = int((now - self.unreachable_since).total_seconds() // 60)
-            self.log("info", f"Bridge answering again after {down} min")
+            self.log("info", f"Lights reachable again after {down} min")
             if self.unreachable_alerted:
-                self.notify("EverLights bridge is back", f"Answering again after {down} minutes.", 3, ["white_check_mark"])
+                self.notify("EverLights is back", f"Bridge and controller answering again after {down} minutes.",
+                            3, ["white_check_mark"])
             self.unreachable_since, self.unreachable_alerted = None, False
+            # Changes may have been given up on while the lights were out of reach:
+            # send whatever the schedule wants now.
+            self.applied_key, self.pending = None, None
         seen = _norm(cur)
         if self.last_seen is not None and seen != self.last_seen:
             what = self.describe(cur)
@@ -534,7 +555,9 @@ class Controller:
 
     def current(self):
         serials = self.zone_serials()
-        return self.call(self.host, "GET", f"zones/{serials[0]}/sequence") if serials else None
+        if not serials:
+            raise NoController()
+        return self.call(self.host, "GET", f"zones/{serials[0]}/sequence")
 
     # actions
 

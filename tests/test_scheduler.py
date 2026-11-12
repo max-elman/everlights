@@ -233,7 +233,48 @@ class AlertTests(unittest.TestCase):
         self.assertEqual([a[0] for a in alerts], ["EverLights bridge unreachable"])
         b.down = False
         c.tick(t + timedelta(minutes=13))
-        self.assertEqual(alerts[-1][0], "EverLights bridge is back")
+        self.assertEqual(alerts[-1][0], "EverLights is back")
+
+    def test_no_controller_alerts_and_never_confirms(self):
+        class Empty(FakeBridge):
+            paired = False
+            def __call__(self, host, method, path, body=None):
+                if path == "zones" and not self.paired:
+                    return []
+                return super().__call__(host, method, path, body)
+        b = Empty()
+        c, alerts = self.make(b)
+        t = datetime(2026, 10, 17, 19, tzinfo=TZ)
+        for m in (0, 1, 5, 11, 12):
+            c.tick(t + timedelta(minutes=m))
+        self.assertEqual(b.writes, 0)
+        self.assertFalse(c.pending["confirmed"])
+        self.assertIn("EverLights controller not paired", [a[0] for a in alerts])
+        self.assertNotIn("EverLights bridge unreachable", [a[0] for a in alerts])
+        with self.assertRaises(scheduler.NoController):
+            c.current()
+        b.paired = True
+        c._zones = (0.0, [])
+        c.tick(t + timedelta(minutes=20))
+        self.assertIn("EverLights is back", [a[0] for a in alerts])
+        self.assertEqual(b.state["pattern"], ["ff0000"])
+
+    def test_resends_after_repair_even_after_giving_up(self):
+        class Empty(FakeBridge):
+            paired = False
+            def __call__(self, host, method, path, body=None):
+                if path == "zones" and not self.paired:
+                    return []
+                return super().__call__(host, method, path, body)
+        b = Empty()
+        c, alerts = self.make(b)
+        t = datetime(2026, 10, 17, 19, tzinfo=TZ)
+        for i in range(scheduler.MAX_ATTEMPTS + 2):
+            c.tick(t + timedelta(minutes=6 * i))
+        self.assertIn("Lights didn't change", [a[0] for a in alerts])
+        b.paired = True
+        c.tick(t + timedelta(hours=3))
+        self.assertEqual(b.state["pattern"], ["ff0000"])
 
     def test_reboot_alert(self):
         class Rebooty(FakeBridge):
