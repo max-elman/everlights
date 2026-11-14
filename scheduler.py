@@ -15,7 +15,7 @@ import urllib.request
 import uuid
 from collections import deque
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import everlights
