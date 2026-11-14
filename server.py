@@ -24,6 +24,7 @@ import threading
 import time
 from http import cookies
 from datetime import datetime, timedelta
+import ipaddress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
@@ -229,6 +230,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_app()
         if url.path == "/sw.js":
             return self.send_static("sw.js")
+        if url.path == "/health":
+            return self.send_text("ok")
         if url.path.startswith("/go/"):
             return self.handle_go(url)
         name = ALIASES.get(url.path) or (url.path[len("/static/"):] if url.path.startswith("/static/") else None)
@@ -459,7 +462,16 @@ class RemoteHandler(Handler):
     limiter = auth.LoginLimiter()
 
     def client(self):
-        return self.headers.get("CF-Connecting-IP") or self.client_address[0]
+        """The visitor's address. CF-Connecting-IP is believed only when the
+        connection comes from the tunnel on this machine or a private network;
+        from anywhere else the header could be forged to dodge the login limit."""
+        peer = self.client_address[0]
+        try:
+            addr = ipaddress.ip_address(peer)
+            trusted = addr.is_loopback or addr.is_private
+        except ValueError:
+            trusted = False
+        return (self.headers.get("CF-Connecting-IP") if trusted else None) or peer
 
     def authed(self):
         st = self.ctl.settings
@@ -529,7 +541,10 @@ class RemoteHandler(Handler):
 
     def login(self):
         who = self.client()
-        n = min(int(self.headers.get("Content-Length") or 0), 4096)
+        try:
+            n = max(0, min(int(self.headers.get("Content-Length") or 0), 4096))
+        except ValueError:
+            n = 0
         form = parse_qs(self.rfile.read(n).decode(errors="replace"))
         password = (form.get("password") or [""])[0]
         st = self.ctl.settings

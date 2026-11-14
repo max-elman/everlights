@@ -21,6 +21,20 @@ scheduler.VERIFY_DELAY = 0
 server.time.sleep = lambda s: None  # skip the wrong-password delay in tests
 
 
+class ClientAddressTests(unittest.TestCase):
+    def who(self, peer, header):
+        h = server.RemoteHandler.__new__(server.RemoteHandler)
+        h.client_address = (peer, 1234)
+        h.headers = {"CF-Connecting-IP": header} if header else {}
+        return h.client()
+
+    def test_header_trusted_only_from_the_tunnel(self):
+        self.assertEqual(self.who("127.0.0.1", "9.9.9.9"), "9.9.9.9")
+        self.assertEqual(self.who("172.18.0.2", "9.9.9.9"), "9.9.9.9")
+        self.assertEqual(self.who("8.8.8.8", "9.9.9.9"), "8.8.8.8")
+        self.assertEqual(self.who("127.0.0.1", None), "127.0.0.1")
+
+
 class RemoteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -47,6 +61,15 @@ class RemoteTests(unittest.TestCase):
         data = r.read()
         c.close()
         return r.status, dict(r.getheaders()), data
+
+    def test_health(self):
+        st, _, body = self.req(self.lan, "GET", "/health")
+        self.assertEqual((st, body.strip()), (200, b"ok"))
+
+    def test_bad_content_length_is_not_a_crash(self):
+        st, _, _ = self.req(self.remote, "POST", "/admin/login", "password=x",
+                            {"Content-Type": "application/x-www-form-urlencoded", "Content-Length": "abc"})
+        self.assertIn(st, (400, 401))
 
     def set_password(self, pw="hunter2hunter2"):
         server.RemoteHandler.limiter = server.auth.LoginLimiter()
