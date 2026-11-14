@@ -60,6 +60,15 @@ class EverLightsLight(EverLightsEntity, LightEntity):
         pattern = self._current.get("pattern") or []
         return _rgb(pattern[0]) if pattern else None
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """The whole pattern that's playing, for dashboards that draw the roofline (rgb_color is only its first color)."""
+        pattern = self._current.get("pattern") or []
+        return {
+            "pattern_colors": [f"#{c[:6].upper()}" for c in pattern if isinstance(c, str) and len(c) >= 6],
+            "pattern_effects": self._current.get("effects") or [],
+        }
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         api = self.coordinator.api
         try:

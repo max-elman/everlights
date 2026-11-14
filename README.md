@@ -113,6 +113,8 @@ It adds:
 - **A light** for the roofline: on, off, any saved pattern as an effect, or a solid color.
   A change from Home Assistant holds until the app's next scheduled change, the same as a
   change made in the app.
+  Its attributes `pattern_colors` (every color of the pattern playing, like `#FF0000`) and
+  `pattern_effects` show the whole pattern; `rgb_color` is only its first color.
 - **Sensors:** next scheduled change (with the pattern), what's scheduled now, the
   controller's signal strength, bridge and controller restarts, and bridge firmware.
 - **Binary sensors:** bridge answering, and (off by default) bridge reaching the
