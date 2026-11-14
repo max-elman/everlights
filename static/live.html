@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07060c">
+<meta name="color-scheme" content="dark">
 <title>Roofline Live</title>
 <meta name="description" content="What our roofline lights are showing right now.">
 <link rel="icon" type="image/png" href="/static/favicon.png">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <style>
+:root { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root { color-scheme: dark; } }
 :root {
   --sky-top: #05040a; --sky-bottom: #141128; --house: #0d0b14; --edge: #1d1a28;
   --text: #f2efe9; --muted: #a29eab; --faint: #6d6977; --accent: #ffb547;

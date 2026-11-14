@@ -4,12 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111014">
+<meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex">
 <title>Sign in · Everlights</title>
 <link rel="icon" type="image/png" href="/static/favicon.png">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="manifest" href="/static/manifest.webmanifest">
 <style>
+:root { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root { color-scheme: dark; } }
 :root { --bg: #111014; --panel: #1b1a20; --line: #2f2e37; --text: #f2efe9; --muted: #9b97a3; --accent: #ffb547; --err: #ff6b6b; color-scheme: dark; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }

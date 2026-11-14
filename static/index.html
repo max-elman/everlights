@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#111014">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -13,6 +14,8 @@
 <link rel="manifest" href="/static/manifest.webmanifest">
 <title>Everlights</title>
 <style>
+:root { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root { color-scheme: dark; } }
 :root {
   --bg: #111014; --panel: #1b1a20; --panel-2: #24232b; --line: #2f2e37;
   --text: #f2efe9; --muted: #9b97a3; --accent: #ffb547; --accent-ink: #1d1406;
