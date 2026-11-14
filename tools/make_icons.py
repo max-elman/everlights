@@ -1,5 +1,4 @@
 """Draw the app icons (a roofline of glowing lights) into static/. Needs Pillow."""
-import math
 import os
 
 from PIL import Image, ImageDraw, ImageFilter

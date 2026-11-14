@@ -73,8 +73,11 @@ class LoginLimiter:
     def blocked(self, who, now=None):
         now = now or time.time()
         with self.lock:
-            recent = [t for t in self.failures.get(who, []) if now - t < FAILURE_WINDOW]
-            self.failures[who] = recent
+            # Forget everyone whose failures have all aged out, so the table can't grow forever.
+            for k in [k for k, v in self.failures.items() if not any(now - t < FAILURE_WINDOW for t in v)]:
+                del self.failures[k]
+            recent = self.failures.get(who, [])
+            recent = [t for t in recent if now - t < FAILURE_WINDOW]
             return len(recent) >= MAX_FAILURES
 
     def failed(self, who, now=None):

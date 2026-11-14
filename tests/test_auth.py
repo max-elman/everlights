@@ -40,6 +40,12 @@ class AuthTests(unittest.TestCase):
         self.assertFalse(lim.blocked("5.6.7.8", now=101))
         self.assertFalse(lim.blocked("1.2.3.4", now=100 + auth.FAILURE_WINDOW + 1))
 
+    def test_limiter_forgets_old_addresses(self):
+        lim = auth.LoginLimiter()
+        lim.failed("1.2.3.4", now=100)
+        lim.blocked("5.6.7.8", now=100 + auth.FAILURE_WINDOW + 1)
+        self.assertNotIn("1.2.3.4", lim.failures)
+
 
 if __name__ == "__main__":
     unittest.main()
